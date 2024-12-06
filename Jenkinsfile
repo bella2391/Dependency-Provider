@@ -6,6 +6,13 @@ pipeline {
                 sh './gradlew build'
             }
         }
+        stage('Test') {
+            steps {
+                catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                    sh './gradlew test'
+                }
+            }
+        }
         stage('Configure Git') {
             steps {
                 withCredentials([
@@ -20,9 +27,6 @@ pipeline {
             }
         }
         stage('Tag and Push') {
-            options {
-                continueOnFailure true
-            }
             steps {
                 script {
                     withCredentials([string(credentialsId: 'GITACCESSTOKEN', variable: 'GIT_TOKEN')]) {
