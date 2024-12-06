@@ -3,6 +3,9 @@ plugins {
 	alias(libs.plugins.shadow)
 }
 
+group = 'keyp.forev.fmc'
+version = '1.0.0'
+
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(17)
