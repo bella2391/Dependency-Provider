@@ -20,6 +20,9 @@ pipeline {
             }
         }
         stage('Tag and Push') {
+            options {
+                continueOnFailure true
+            }
             steps {
                 script {
                     withCredentials([string(credentialsId: 'GITACCESSTOKEN', variable: 'GIT_TOKEN')]) {
@@ -29,8 +32,12 @@ pipeline {
                         fi
                         git clone "https://github.com/bella2391/Jenkin-Dependency-Provider.git"
                         cd Jenkin-Dependency-Provider
-                        git tag -a "jenkins-FMC-Dependency-${BUILD_NUMBER}" -m "Jenkins Build #${BUILD_NUMBER}"
-                        git push "https://oauth2:${GIT_TOKEN}@github.com/bella2391/Jenkin-Dependency-Provider.git" --tags
+                        if git rev-parse "refs/tags/jenkins-FMC-Dependency-${BUILD_NUMBER}" >/dev/null 2>&1; then
+                            echo "Tag jenkins-FMC-Dependency-${BUILD_NUMBER} already exists. Skipping tag creation."
+                        else
+                            git tag -a "jenkins-FMC-Dependency-${BUILD_NUMBER}" -m "Jenkins Build #${BUILD_NUMBER}"
+                            git push "https://oauth2:${GIT_TOKEN}@github.com/bella2391/Jenkin-Dependency-Provider.git" --tags
+                        fi
                         '''
                     }
                 }
@@ -55,9 +62,16 @@ pipeline {
                         """,
                         authentication: 'GitHub-Token'
                     )
+                    echo "GitHub API Response: ${response.content}"
                     def release_id = new groovy.json.JsonSlurper().parseText(response.content).id
                     def jarFilePath = 'build/libs/FMC-Dependency-1.0.0.jar'
                     def fileName = 'FMC-Dependency-1.0.0.jar'
+                    sh '''
+                    if [ ! -f "${jarFilePath}" ]; then
+                        echo "Error: JAR file not found at ${jarFilePath}"
+                        exit 1
+                    fi
+                    '''
                     sh "curl -X POST -H 'Authorization: token ${GIT_TOKEN}' -H 'Content-Type: application/octet-stream' --data-binary @${jarFilePath} https://uploads.github.com/repos/bella2391/Jenkin-Dependency-Provider/releases/${release_id}/assets?name=${fileName}"
                 }
             }
