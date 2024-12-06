@@ -1,0 +1,35 @@
+plugins {
+	id 'java'
+	alias(libs.plugins.shadow)
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+configurations {
+	shadowImpl
+	compileOnly.extendsFrom shadowImpl
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+	shadowImpl 'club.minnced:discord-webhooks:0.8.0'
+}
+
+shadowJar {
+	configurations = [project.configurations.shadowImpl]
+	archiveBaseName.set('FMC-Dependency')
+	archiveClassifier.set('')
+	archiveVersion.set('3.4.0')
+	exclude('META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA')
+}
+
+tasks.build {
+    dependsOn tasks.shadowJar
+}
