@@ -3,7 +3,7 @@ pipeline {
     stages {
         stage('Build') {
             steps {
-                sh './gradlew build'  // または ./mvnw package などでJARをビルド
+                sh './gradlew build'
             }
         }
         stage('Configure Git') {
@@ -13,7 +13,6 @@ pipeline {
                     string(credentialsId: 'GitUserEmail', variable: 'GIT_USER_EMAIL')
                 ]) {
                     sh '''
-                    pwd
                     git config --global user.name "${GIT_USER_NAME}"
                     git config --global user.email "${GIT_USER_EMAIL}"
                     '''
@@ -25,10 +24,10 @@ pipeline {
                 script {
                     withCredentials([string(credentialsId: 'GITACCESSTOKEN', variable: 'GIT_TOKEN')]) {
                         sh '''
-                        # リポジトリが既に存在している場合はクローンしない
-                        if [ ! -d "Jenkin-Dependency-Provider" ]; then
-                            git clone "https://github.com/bella2391/Jenkin-Dependency-Provider.git"
+                        if [ -d "Jenkin-Dependency-Provider" ]; then
+                            rm -rf Jenkin-Dependency-Provider
                         fi
+                        git clone "https://github.com/bella2391/Jenkin-Dependency-Provider.git"
                         cd Jenkin-Dependency-Provider
                         git tag -a "jenkins-FMC-Dependency-${BUILD_NUMBER}" -m "Jenkins Build #${BUILD_NUMBER}"
                         git push "https://oauth2:${GIT_TOKEN}@github.com/bella2391/Jenkin-Dependency-Provider.git" --tags
@@ -40,7 +39,6 @@ pipeline {
         stage('Create Release on GitHub') {
             steps {
                 script {
-                    // GitHub APIを使用してリリースを作成するステップ
                     def response = httpRequest(
                         acceptType: 'APPLICATION_JSON',
                         contentType: 'APPLICATION_JSON',
@@ -57,16 +55,10 @@ pipeline {
                         """,
                         authentication: 'GitHub-Token'
                     )
-                    echo "Release created: ${response}"
-                }
-            }
-        }
-        stage('Upload JAR to Release') {
-            steps {
-                script {
-                    // GitHubリリースにJARファイルをアップロード
-                    def releaseUrl = "https://uploads.github.com/repos/bella2391/Jenkin-Dependency-Provider/releases/${release_id}/assets?name=${file_name}"
-                    sh "curl -XPOST -H 'Authorization: token ${GIT_TOKEN}' -H 'Content-Type: application/octet-stream' --data-binary @path_to_jar_file ${releaseUrl}"
+                    def release_id = new groovy.json.JsonSlurper().parseText(response.content).id
+                    def jarFilePath = 'build/libs/FMC-Dependency-1.0.0.jar'
+                    def fileName = 'FMC-Dependency-1.0.0.jar'
+                    sh "curl -X POST -H 'Authorization: token ${GIT_TOKEN}' -H 'Content-Type: application/octet-stream' --data-binary @${jarFilePath} https://uploads.github.com/repos/bella2391/Jenkin-Dependency-Provider/releases/${release_id}/assets?name=${fileName}"
                 }
             }
         }
