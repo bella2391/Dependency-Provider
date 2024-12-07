@@ -72,10 +72,10 @@ pipeline {
                         echo "GitHub Release ID: ${releaseId}"
 
                         def jarFilePath = "build/libs/FMC-Dependency-1.0.0.jar"
-                        def jarFileBytes = new File(jarFilePath).bytes
                         if (!fileExists(jarFilePath)) {
                             error "JAR file not found: ${jarFilePath}"
                         }
+                        def jarFileBytes = readFile(file: jarFilePath, encoding: 'ISO-8859-1').getBytes('ISO-8859-1')
                         def uploadUrl = "https://uploads.github.com/repos/bella2391/Jenkin-Dependency-Provider/releases/${releaseId}/assets?name=${jarFilePath.split('/').last()}"
 
                         def uploadResponse = httpRequest(
