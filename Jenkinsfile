@@ -1,4 +1,5 @@
-import java.util.Base64
+import java.nio.file.Files
+import java.nio.file.Paths
 
 pipeline {
     agent any
@@ -71,8 +72,7 @@ pipeline {
                         echo "GitHub Release ID: ${releaseId}"
 
                         def jarFilePath = "build/libs/FMC-Dependency-1.0.0.jar"
-                        def jarFileContent = readFile(file: jarFilePath, encoding: 'ISO-8859-1')
-                        def jarFileBase64 = Base64.getEncoder().encodeToString(jarFileContent.getBytes('ISO-8859-1'))
+                        def jarFileBytes = Files.readAllBytes(Paths.get(jarFilePath))
                         def uploadUrl = "https://uploads.github.com/repos/bella2391/Jenkin-Dependency-Provider/releases/${releaseId}/assets?name=${jarFilePath.split('/').last()}"
 
                         def uploadResponse = httpRequest(
@@ -80,7 +80,7 @@ pipeline {
                             contentType: 'APPLICATION_OCTETSTREAM',
                             httpMode: 'POST',
                             url: uploadUrl,
-                            requestBody: jarFileBase64,
+                            requestBody: jarFileBytes,
                             customHeaders: [[name: 'Authorization', value: "token ${GIT_TOKEN}"],
                                             [name: 'Content-Type', value: 'application/java-archive']]
                         )
