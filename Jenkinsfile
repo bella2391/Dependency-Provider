@@ -66,6 +66,20 @@ pipeline {
                             customHeaders: [[name: 'Authorization', value: "token ${GIT_TOKEN}"]]
                         )
                         echo "GitHub Release Response: ${response}"
+
+                        def jarFilePath = "build/libs/FMC-Dependency-1.0.0.jar"
+                        def uploadUrl = "https://uploads.github.com/repos/bella2391/Jenkin-Dependency-Provider/releases/${releaseId}/assets?name=${jarFilePath.split('/').last()}"
+
+                        def uploadResponse = httpRequest(
+                            acceptType: 'APPLICATION_JSON',
+                            contentType: 'application/java-archive',
+                            httpMode: 'POST',
+                            url: uploadUrl,
+                            requestBody: new File(jarFilePath).bytes,
+                            customHeaders: [[name: 'Authorization', value: "token ${GIT_TOKEN}"],
+                                            [name: 'Content-Type', value: 'application/java-archive']]
+                        )
+                        echo "GitHub Upload Response: ${uploadResponse}"
                     }
                 }
             }
