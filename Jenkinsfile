@@ -74,7 +74,7 @@ pipeline {
 
                         def uploadResponse = httpRequest(
                             acceptType: 'APPLICATION_JSON',
-                            contentType: 'application/java-archive',
+                            contentType: 'APPLICATION_OCTETSTREAM',
                             httpMode: 'POST',
                             url: uploadUrl,
                             requestBody: jarFileContent,
