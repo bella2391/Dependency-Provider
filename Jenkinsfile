@@ -65,12 +65,11 @@ pipeline {
                             }""",
                             customHeaders: [[name: 'Authorization', value: "token ${GIT_TOKEN}"]]
                         )
-                        echo "GitHub Release Response: ${response}"
-
                         def releaseId = new groovy.json.JsonSlurper().parseText(response.content).id
                         echo "GitHub Release ID: ${releaseId}"
 
                         def jarFilePath = "build/libs/FMC-Dependency-1.0.0.jar"
+                        def jarFileContent = readFile(file: jarFilePath, encoding: 'ISO-8859-1').getBytes('ISO-8859-1')
                         def uploadUrl = "https://uploads.github.com/repos/bella2391/Jenkin-Dependency-Provider/releases/${releaseId}/assets?name=${jarFilePath.split('/').last()}"
 
                         def uploadResponse = httpRequest(
@@ -78,7 +77,7 @@ pipeline {
                             contentType: 'application/java-archive',
                             httpMode: 'POST',
                             url: uploadUrl,
-                            requestBody: new File(jarFilePath).bytes,
+                            requestBody: jarFileContent,
                             customHeaders: [[name: 'Authorization', value: "token ${GIT_TOKEN}"],
                                             [name: 'Content-Type', value: 'application/java-archive']]
                         )
