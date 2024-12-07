@@ -1,5 +1,4 @@
-import java.nio.file.Files
-import java.nio.file.Paths
+import java.util.Base64
 
 pipeline {
     agent any
@@ -32,7 +31,7 @@ pipeline {
         stage('Tag and Push') {
             steps {
                 script {
-                    withCredentials([string(credentialsId: 'GITACCESSTOKEN', variable: 'GIT_TOKEN')]) {
+                    withCredentials([string(credentialsId: 'GitHub-Token', variable: 'GIT_TOKEN')]) {
                         sh '''
                         if [ -d "Jenkin-Dependency-Provider" ]; then
                             rm -rf Jenkin-Dependency-Provider
@@ -75,7 +74,8 @@ pipeline {
                         if (!fileExists(jarFilePath)) {
                             error "JAR file not found: ${jarFilePath}"
                         }
-                        def jarFileBytes = readFile(file: jarFilePath, encoding: 'ISO-8859-1').getBytes('ISO-8859-1')
+                        def jarFileContent = readFile(file: jarFilePath, encoding: 'ISO-8859-1')
+                        def jarFileBase64 = Base64.getEncoder().encodeToString(jarFileContent.getBytes('ISO-8859-1'))
                         def uploadUrl = "https://uploads.github.com/repos/bella2391/Jenkin-Dependency-Provider/releases/${releaseId}/assets?name=${jarFilePath.split('/').last()}"
 
                         def uploadResponse = httpRequest(
@@ -83,7 +83,7 @@ pipeline {
                             contentType: 'APPLICATION_OCTETSTREAM',
                             httpMode: 'POST',
                             url: uploadUrl,
-                            requestBody: jarFileBytes,
+                            requestBody: jarFileBase64,
                             customHeaders: [[name: 'Authorization', value: "token ${GIT_TOKEN}"],
                                             [name: 'Content-Type', value: 'application/java-archive']]
                         )
